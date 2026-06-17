@@ -23,26 +23,26 @@ jobs:
         run: |
           echo "Overriding strict package constraints and environment limits..."
           if [ -f "pubspec.yaml" ]; then
-            # permission_handler को 'any' करना
+            # permission_handler और intl को 'any' करना
             sed -i 's/permission_handler:.*/permission_handler: any/' pubspec.yaml
-            
-            # अगर कोई और अड़ियल वर्जन हो तो उसे ठीक करना
             sed -i 's/intl:.*/intl: any/' pubspec.yaml
+            
+            # पुराने file_picker को हटाकर उसकी जगह आधुनिक वर्जन सेट करना ताकि v2 एम्बेडिंग क्रैश न हो
+            sed -i '/file_picker:/d' pubspec.yaml
+            sed -i '/\^6.1.1/d' pubspec.yaml
+            sed -i '/dependencies:/a \  file_picker: any' pubspec.yaml
           fi
 
       - name: Nuclear Fix for Android v1 Embedding
         run: |
           echo "Completely scrubbing legacy v1 embedding structures..."
-          # सभी पुरानी MainActivity फाइलों को डिलीट करना
           find android/app/src/main/ -name "MainActivity.java" -o -name "MainActivity.kt" -exec rm -f {} \;
           
-          # build.gradle से applicationId निकालना या डिफॉल्ट सेट करना
           PKG_NAME=$(grep "applicationId" android/app/build.gradle | head -n1 | sed 's/.*applicationId //; s/"//g; s/'"'"'//g' | xargs)
           if [ -z "$PKG_NAME" ] || [[ "$PKG_NAME" == *.* ]]; then
             PKG_NAME="com.example.nexfile_manager_ai"
           fi
           
-          # नया v2 एक्टिविटी ढांचा तैयार करना
           PKG_PATH=$(echo $PKG_NAME | tr '.' '/')
           mkdir -p android/app/src/main/kotlin/$PKG_PATH
           
@@ -55,12 +55,10 @@ jobs:
           }
           EOF
           
-          # AndroidManifest.xml में से पुरानी एम्बेडिंग की लाइनों को जबरदस्ती हटाना या बदलना
           if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
             sed -i '/android:name="io.flutter.app.FlutterApplication"/d' android/app/src/main/AndroidManifest.xml
             sed -i 's/io.flutter.app.FlutterActivity/io.flutter.embedding.android.FlutterActivity/g' android/app/src/main/AndroidManifest.xml
           fi
-          echo "v2 Modernization step complete."
 
       - name: Handle JPG Admin Photo
         run: |
@@ -79,19 +77,4 @@ jobs:
       - name: Set up Flutter (Target Version)
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.6' # इस वर्जन पर SDK एरर नहीं आएगा
-          channel: 'stable'
-
-      - name: Install Clean Dependencies
-        run: |
-          flutter pub upgrade --major-versions
-          flutter pub get
-
-      - name: Build APK
-        run: flutter build apk --release --no-shrink --no-sound-null-safety || flutter build apk --release --no-shrink
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          flutter-version: '3.19.6'
