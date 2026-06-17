@@ -1,4 +1,4 @@
-name: Build Android APK
+  name: Build Android APK
 on:
   push:
     branches: [ "main" ]
@@ -11,16 +11,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Unzip Project Files
+      - name: Unzip and Locate Project Root
         run: |
-          unzip Asset.zip -d project_extracted
-          # मुख्य डायरेक्टरी को सही जगह सेट करने के लिए
-          if [ -d "project_extracted/nexfile_manager_flutter" ]; then
-            mv project_extracted/nexfile_manager_flutter/* .
-            mv project_extracted/nexfile_manager_flutter/.* . 2>/dev/null || true
-          else
-            mv project_extracted/* . 2>/dev/null || true
-          fi
+          unzip Asset.zip -d extracted_content
+          TARGET_DIR=$(find extracted_content -name "pubspec.yaml" -exec dirname {} \;)
+          echo "Project root found at: $TARGET_DIR"
+          mv $TARGET_DIR/* . 2>/dev/null || true
+          mv $TARGET_DIR/.* . 2>/dev/null || true
 
       - name: Set up Java
         uses: actions/setup-java@v3
@@ -35,6 +32,15 @@ jobs:
 
       - name: Install Dependencies
         run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk      run: flutter pub get
 
       - name: Build APK
         run: flutter build apk --release
