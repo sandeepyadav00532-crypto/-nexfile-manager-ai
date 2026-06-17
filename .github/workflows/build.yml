@@ -19,19 +19,23 @@ jobs:
           mv $TARGET_DIR/* . 2>/dev/null || true
           mv $TARGET_DIR/.* . 2>/dev/null || true
 
-      - name: Clean and Force Override Dependencies
+      - name: Clean and Fix pubspec.yaml
         run: |
-          echo "Overriding problematic intl and localizations packages..."
+          echo "Cleaning dependencies and fixing duplicates..."
           if [ -f "pubspec.yaml" ]; then
             # खराब पड़े पैकेजों को हटाना
             sed -i '/document_scanner_flutter/d' pubspec.yaml
             sed -i '/storage_details/d' pubspec.yaml
             sed -i '/dropbox/I d' pubspec.yaml
             
-            # intl पैकेज के वर्जन के टकराव को जड़ से खत्म करने के लिए ओवरराइड करना
+            # पहले से मौजूद intl की सभी लाइनों को हटाना ताकि डुप्लीकेट एरर न आए
+            sed -i '/intl:/d' pubspec.yaml
+            sed -i '/\^0.19.0/d' pubspec.yaml
+            
+            # एक साफ और नया intl पैकेज जोड़ना जो वर्जन टकराव न करे
             sed -i '/dependencies:/a \  intl: any' pubspec.yaml
           fi
-          echo "Dependencies cleaned up successfully."
+          echo "pubspec.yaml clean up completed."
 
       - name: Handle JPG Admin Photo
         run: |
@@ -55,7 +59,6 @@ jobs:
 
       - name: Install Dependencies Safely
         run: |
-          # बिना किसी पाबंदी के जबरदस्ती वर्जन मैच कराना
           flutter pub get || flutter pub get --suppress-analytics
 
       - name: Force Fix Android v1 Embedding
