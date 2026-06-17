@@ -23,11 +23,8 @@ jobs:
         run: |
           echo "Removing invalid scanner, storage_details, and dropbox dependencies..."
           if [ -f "pubspec.yaml" ]; then
-            # खराब डॉक्यूमेंट स्कैनर पैकेज को हटाना
             sed -i '/document_scanner_flutter/d' pubspec.yaml
-            # इस नए खराब स्टोरेज डिटेल्स पैकेज को हटाना
             sed -i '/storage_details/d' pubspec.yaml
-            # ड्रॉपबॉक्स को भी पूरी तरह हटाना
             sed -i '/dropbox/I d' pubspec.yaml
           fi
           echo "Dependencies cleaned up successfully."
@@ -52,8 +49,11 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Install Dependencies
-        run: flutter pub get
+      - name: Upgrade and Install Dependencies
+        run: |
+          # गिटहब की सुझाई कमांड जो वर्जन के टकराव को खुद ठीक करेगी
+          flutter pub upgrade --major-versions
+          flutter pub get
 
       - name: Build APK
         run: flutter build apk --release
