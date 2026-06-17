@@ -21,11 +21,13 @@ jobs:
 
       - name: Clean Invalid Packages
         run: |
-          echo "Removing invalid scanner and dropbox dependencies..."
+          echo "Removing invalid scanner, storage_details, and dropbox dependencies..."
           if [ -f "pubspec.yaml" ]; then
             # खराब डॉक्यूमेंट स्कैनर पैकेज को हटाना
             sed -i '/document_scanner_flutter/d' pubspec.yaml
-            # सुरक्षित रहने के लिए ड्रॉपबॉक्स को भी चेक करना
+            # इस नए खराब स्टोरेज डिटेल्स पैकेज को हटाना
+            sed -i '/storage_details/d' pubspec.yaml
+            # ड्रॉपबॉक्स को भी पूरी तरह हटाना
             sed -i '/dropbox/I d' pubspec.yaml
           fi
           echo "Dependencies cleaned up successfully."
