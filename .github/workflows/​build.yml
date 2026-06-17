@@ -13,12 +13,19 @@ jobs:
 
       - name: Unzip and Locate Project Root
         run: |
-          # आपकी नई ज़िप फ़ाइल को अनज़िप करना
           unzip *.zip -d extracted_content
           TARGET_DIR=$(find extracted_content -name "pubspec.yaml" -exec dirname {} \;)
           echo "Project root found at: $TARGET_DIR"
           mv $TARGET_DIR/* . 2>/dev/null || true
           mv $TARGET_DIR/.* . 2>/dev/null || true
+
+      - name: Fix Package Restrictions
+        run: |
+          echo "Overriding strict permission_handler constraints..."
+          if [ -f "pubspec.yaml" ]; then
+            # permission_handler के अड़ियल वर्जन को हटाकर 'any' कर देना
+            sed -i 's/permission_handler:.*/permission_handler: any/' pubspec.yaml
+          fi
 
       - name: Handle JPG Admin Photo
         run: |
@@ -41,6 +48,8 @@ jobs:
 
       - name: Install Clean Dependencies
         run: |
+          # वर्जन टकराव को खुद ठीक करने के लिए अपग्रेड कमांड
+          flutter pub upgrade --major-versions
           flutter pub get
 
       - name: Build APK
