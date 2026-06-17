@@ -1,3 +1,23 @@
+Skip to content
+sandeepyadav00532-crypto
+-nexfile-manager-ai
+Repository navigation
+Code
+Issues
+Pull requests
+Agents
+Actions
+Projects
+Wiki
+Security and quality
+Insights
+Settings
+Build Custom Android APK
+Refactor build workflow for Flutter modernization #7
+All jobs
+Run details
+Workflow file for this run
+.github/workflows/​build.yml at 91174af
 name: Build Custom Android APK
 on:
   push:
@@ -18,7 +38,6 @@ jobs:
           echo "Project root found at: $TARGET_DIR"
           mv $TARGET_DIR/* . 2>/dev/null || true
           mv $TARGET_DIR/.* . 2>/dev/null || true
-
       - name: Force Clean and Fix pubspec.yaml
         run: |
           echo "Overriding strict package constraints and environment limits..."
@@ -32,7 +51,6 @@ jobs:
             sed -i '/\^6.1.1/d' pubspec.yaml
             sed -i '/dependencies:/a \  file_picker: any' pubspec.yaml
           fi
-
       - name: Nuclear Fix for Android v1 Embedding
         run: |
           echo "Completely scrubbing legacy v1 embedding structures..."
@@ -59,7 +77,6 @@ jobs:
             sed -i '/android:name="io.flutter.app.FlutterApplication"/d' android/app/src/main/AndroidManifest.xml
             sed -i 's/io.flutter.app.FlutterActivity/io.flutter.embedding.android.FlutterActivity/g' android/app/src/main/AndroidManifest.xml
           fi
-
       - name: Handle JPG Admin Photo
         run: |
           echo "Checking and converting admin photo safely..."
@@ -67,7 +84,6 @@ jobs:
             dir=$(dirname "$file")
             cp "$file" "$dir/admin.png"
           done
-
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
