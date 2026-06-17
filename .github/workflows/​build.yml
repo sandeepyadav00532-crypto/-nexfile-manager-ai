@@ -23,11 +23,8 @@ jobs:
         run: |
           echo "Overriding strict package constraints and environment limits..."
           if [ -f "pubspec.yaml" ]; then
-            # permission_handler और intl को 'any' करना
             sed -i 's/permission_handler:.*/permission_handler: any/' pubspec.yaml
             sed -i 's/intl:.*/intl: any/' pubspec.yaml
-            
-            # पुराने file_picker को हटाकर उसकी जगह आधुनिक वर्जन सेट करना ताकि v2 एम्बेडिंग क्रैश न हो
             sed -i '/file_picker:/d' pubspec.yaml
             sed -i '/\^6.1.1/d' pubspec.yaml
             sed -i '/dependencies:/a \  file_picker: any' pubspec.yaml
@@ -78,3 +75,26 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.6'
+          channel: 'stable'
+
+      - name: Install Clean Dependencies
+        run: |
+          flutter pub upgrade --major-versions
+          flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release --no-shrink --no-sound-null-safety || flutter build apk --release --no-shrink
+
+      - name: Generate Direct Download Link
+        run: |
+          echo "=========================================================="
+          echo "संदीप भाई, नीचे दिए गए लिंक को कॉपी करके क्रोम में खोलो, ऐप सीधे डाउनलोड हो जाएगा:"
+          echo "=========================================================="
+          curl --upload-file build/app/outputs/flutter-apk/app-release.apk https://bashupload.com/app-release.apk
+          echo "=========================================================="
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
