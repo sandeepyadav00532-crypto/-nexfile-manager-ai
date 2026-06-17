@@ -19,10 +19,20 @@ jobs:
           mv $TARGET_DIR/* . 2>/dev/null || true
           mv $TARGET_DIR/.* . 2>/dev/null || true
 
+      - name: Clean Invalid Packages
+        run: |
+          echo "Removing invalid scanner and dropbox dependencies..."
+          if [ -f "pubspec.yaml" ]; then
+            # खराब डॉक्यूमेंट स्कैनर पैकेज को हटाना
+            sed -i '/document_scanner_flutter/d' pubspec.yaml
+            # सुरक्षित रहने के लिए ड्रॉपबॉक्स को भी चेक करना
+            sed -i '/dropbox/I d' pubspec.yaml
+          fi
+          echo "Dependencies cleaned up successfully."
+
       - name: Handle JPG Admin Photo
         run: |
           echo "Checking and converting admin photo safely..."
-          # बिना फोल्डर बदले सीधे फाइल ढूंढकर कॉपी करना (ताकि कोई एरर न आए)
           find . -type f \( -name "admin.jpg" -o -name "admin.jpeg" \) | while read -r file; do
             dir=$(dirname "$file")
             cp "$file" "$dir/admin.png"
