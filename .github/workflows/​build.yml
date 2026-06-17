@@ -21,11 +21,22 @@ jobs:
 
       - name: Fix Package Restrictions
         run: |
-          echo "Overriding strict permission_handler constraints..."
+          echo "Overriding strict package constraints..."
           if [ -f "pubspec.yaml" ]; then
-            # permission_handler के अड़ियल वर्जन को हटाकर 'any' कर देना
             sed -i 's/permission_handler:.*/permission_handler: any/' pubspec.yaml
           fi
+
+      - name: Force Fix Android v1 Embedding
+        run: |
+          echo "Rewriting old v1 embedding to modern v2 embedding..."
+          # MainActivity की फाइल ढूंढकर पुरानी एक्टिविटी को नए से बदलना
+          find android/ -name "MainActivity.java" -o -name "MainActivity.kt" 2>/dev/null | while read -r file; do
+            if [[ "$file" == *.java ]]; then
+              sed -i 's/import io.flutter.app.FlutterActivity;/import io.flutter.embedding.android.FlutterActivity;/' "$file"
+            elif [[ "$file" == *.kt ]]; then
+              sed -i 's/import io.flutter.app.FlutterActivity/import io.flutter.embedding.android.FlutterActivity/' "$file"
+            fi
+          done
 
       - name: Handle JPG Admin Photo
         run: |
@@ -48,7 +59,6 @@ jobs:
 
       - name: Install Clean Dependencies
         run: |
-          # वर्जन टकराव को खुद ठीक करने के लिए अपग्रेड कमांड
           flutter pub upgrade --major-versions
           flutter pub get
 
