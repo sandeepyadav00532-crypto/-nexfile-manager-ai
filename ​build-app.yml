@@ -19,6 +19,14 @@ jobs:
           mv $TARGET_DIR/* . 2>/dev/null || true
           mv $TARGET_DIR/.* . 2>/dev/null || true
 
+      - name: Remove Dropbox SDK Dependency
+        run: |
+          # pubspec.yaml से dropbox_sdk वाली लाइन को हटाना
+          if [ -f "pubspec.yaml" ]; then
+            sed -i '/dropbox_sdk/d' pubspec.yaml
+            echo "pubspec.yaml updated successfully."
+          fi
+
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
