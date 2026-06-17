@@ -19,14 +19,12 @@ jobs:
           mv $TARGET_DIR/* . 2>/dev/null || true
           mv $TARGET_DIR/.* . 2>/dev/null || true
 
-      - name: Strictly Remove Dropbox Dependency
+      - name: Fix Dropbox Dependency
         run: |
           if [ -f "pubspec.yaml" ]; then
-            # किसी भी रूप में लिखे हुए dropbox_sdk को पूरी तरह हटाना
-            sed -i '/dropbox_sdk/d' pubspec.yaml
-            sed -i '/dropbox/d' pubspec.yaml
-            echo "--- Updated pubspec.yaml ---"
-            cat pubspec.yaml
+            # गलत पैकेज नाम को असली काम करने वाले पैकेज से बदलना
+            sed -i 's/dropbox_sdk:/dropbox_client: ^3.0.0/g' pubspec.yaml
+            echo "pubspec.yaml successfully updated with stable package."
           fi
 
       - name: Set up Java
