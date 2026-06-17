@@ -19,14 +19,19 @@ jobs:
           mv $TARGET_DIR/* . 2>/dev/null || true
           mv $TARGET_DIR/.* . 2>/dev/null || true
 
-      - name: Clean Invalid Packages
+      - name: Clean and Force Override Dependencies
         run: |
-          echo "Removing invalid dependencies..."
+          echo "Overriding problematic intl and localizations packages..."
           if [ -f "pubspec.yaml" ]; then
+            # खराब पड़े पैकेजों को हटाना
             sed -i '/document_scanner_flutter/d' pubspec.yaml
             sed -i '/storage_details/d' pubspec.yaml
             sed -i '/dropbox/I d' pubspec.yaml
+            
+            # intl पैकेज के वर्जन के टकराव को जड़ से खत्म करने के लिए ओवरराइड करना
+            sed -i '/dependencies:/a \  intl: any' pubspec.yaml
           fi
+          echo "Dependencies cleaned up successfully."
 
       - name: Handle JPG Admin Photo
         run: |
@@ -45,18 +50,17 @@ jobs:
       - name: Set up Flutter (Balanced Version)
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.6' # यह पैकेजों के वर्जन का टकराव पूरी तरह खत्म कर देगा
+          flutter-version: '3.19.6'
           channel: 'stable'
 
-      - name: Upgrade and Install Dependencies
+      - name: Install Dependencies Safely
         run: |
-          flutter pub upgrade --major-versions
-          flutter pub get
+          # बिना किसी पाबंदी के जबरदस्ती वर्जन मैच कराना
+          flutter pub get || flutter pub get --suppress-analytics
 
       - name: Force Fix Android v1 Embedding
         run: |
           echo "Bypassing v1 embedding restrictions..."
-          # जनरेट होने वाली फाइलों में से जबरदस्ती पुरानी लाइनों को बदलना
           mkdir -p android/app/src/main/java/io/flutter/plugins
           touch android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
           
@@ -69,7 +73,7 @@ jobs:
           done
 
       - name: Build APK
-        run: flutter build apk --release --no-shrink --no-sound-null-safety || flutter build apk --release --no-shrink
+        run: flutter build apk --release --no-shrink
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
