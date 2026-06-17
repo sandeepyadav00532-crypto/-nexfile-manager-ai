@@ -51,9 +51,24 @@ jobs:
 
       - name: Upgrade and Install Dependencies
         run: |
-          # गिटहब की सुझाई कमांड जो वर्जन के टकराव को खुद ठीक करेगी
           flutter pub upgrade --major-versions
           flutter pub get
+
+      - name: Fix Android v1 Embedding
+        run: |
+          echo "Upgrading project to Android v2 embedding..."
+          # MainActivity को नए v2 एम्बेडिंग तरीके पर अपडेट करना
+          find android/app/src/main -name "MainActivity.java" -o -name "MainActivity.kt" | while read -r file; do
+            if [[ "$file" == *.java ]]; then
+              sed -i 's/import io.flutter.app.FlutterActivity;/import io.flutter.embedding.android.FlutterActivity;/' "$file"
+            elif [[ "$file" == *.kt ]]; then
+              sed -i 's/import io.flutter.app.FlutterActivity/import io.flutter.embedding.android.FlutterActivity/' "$file"
+            fi
+          done
+          # AndroidManifest.xml से पुरानी लाइनों को हटाना या अपडेट करना
+          if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
+            sed -i '/android:name="io.flutter.app.FlutterApplication"/d' android/app/src/main/AndroidManifest.xml
+          fi
 
       - name: Build APK
         run: flutter build apk --release
