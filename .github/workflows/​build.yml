@@ -26,17 +26,32 @@ jobs:
             sed -i 's/permission_handler:.*/permission_handler: any/' pubspec.yaml
           fi
 
-      - name: Force Fix Android v1 Embedding
+      - name: Nuclear Fix for Android v1 Embedding
         run: |
-          echo "Rewriting old v1 embedding to modern v2 embedding..."
-          # MainActivity की फाइल ढूंढकर पुरानी एक्टिविटी को नए से बदलना
-          find android/ -name "MainActivity.java" -o -name "MainActivity.kt" 2>/dev/null | while read -r file; do
-            if [[ "$file" == *.java ]]; then
-              sed -i 's/import io.flutter.app.FlutterActivity;/import io.flutter.embedding.android.FlutterActivity;/' "$file"
-            elif [[ "$file" == *.kt ]]; then
-              sed -i 's/import io.flutter.app.FlutterActivity/import io.flutter.embedding.android.FlutterActivity/' "$file"
-            fi
-          done
+          echo "Completely deleting legacy android activity files..."
+          # पुराने स्टाइल की सभी MainActivity फाइलों को हटाना ताकि टकराव खत्म हो
+          find android/app/src/main/ -name "MainActivity.java" -o -name "MainActivity.kt" -exec rm -f {} \;
+          
+          # पैकेज का नाम ढूंढना (जैसे com.example.app)
+          PKG_NAME=$(grep "applicationId" android/app/build.gradle | head -n1 | awk -F'"' '{print $2}' | awk -F"'" '{print $2}' | xargs)
+          if [ -z "$PKG_NAME" ]; then
+            PKG_NAME="com.example.nexfile_manager_ai"
+          fi
+          
+          # पैकेज नाम के हिसाब से फ़ोल्डर का रास्ता तय करना
+          PKG_PATH=$(echo $PKG_NAME | tr '.' '/')
+          mkdir -p android/app/src/main/kotlin/$PKG_PATH
+          
+          # एकदम नई, आधुनिक v2 Embedding वाली MainActivity.kt फ़ाइल खुद लिखना
+          cat <<EOF > android/app/src/main/kotlin/$PKG_PATH/MainActivity.kt
+          package $PKG_NAME
+          
+          import io.flutter.embedding.android.FlutterActivity
+          
+          class MainActivity: FlutterActivity() {
+          }
+          EOF
+          echo "Brand new clean v2 MainActivity created successfully."
 
       - name: Handle JPG Admin Photo
         run: |
