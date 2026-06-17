@@ -21,13 +21,12 @@ jobs:
 
       - name: Clean Invalid Packages
         run: |
-          echo "Removing invalid scanner, storage_details, and dropbox dependencies..."
+          echo "Removing invalid dependencies..."
           if [ -f "pubspec.yaml" ]; then
             sed -i '/document_scanner_flutter/d' pubspec.yaml
             sed -i '/storage_details/d' pubspec.yaml
             sed -i '/dropbox/I d' pubspec.yaml
           fi
-          echo "Dependencies cleaned up successfully."
 
       - name: Handle JPG Admin Photo
         run: |
@@ -35,19 +34,18 @@ jobs:
           find . -type f \( -name "admin.jpg" -o -name "admin.jpeg" \) | while read -r file; do
             dir=$(dirname "$file")
             cp "$file" "$dir/admin.png"
-            echo "Successfully converted $file to admin.png inside $dir"
           done
 
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '11' # पुराने फ्लटर वर्जन के लिए परफेक्ट जावा गियर
+          java-version: '17'
 
-      - name: Set up Flutter (Compatible Version)
+      - name: Set up Flutter (Balanced Version)
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.10.6' # यह वर्जन v1 एम्बेडिंग को बिना किसी एरर के स्वीकार कर लेगा
+          flutter-version: '3.19.6' # यह पैकेजों के वर्जन का टकराव पूरी तरह खत्म कर देगा
           channel: 'stable'
 
       - name: Upgrade and Install Dependencies
@@ -55,8 +53,23 @@ jobs:
           flutter pub upgrade --major-versions
           flutter pub get
 
+      - name: Force Fix Android v1 Embedding
+        run: |
+          echo "Bypassing v1 embedding restrictions..."
+          # जनरेट होने वाली फाइलों में से जबरदस्ती पुरानी लाइनों को बदलना
+          mkdir -p android/app/src/main/java/io/flutter/plugins
+          touch android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+          
+          find android/ -name "MainActivity.java" -o -name "MainActivity.kt" -o -name "GeneratedPluginRegistrant.java" 2>/dev/null | while read -r file; do
+            if [[ "$file" == *.java ]]; then
+              sed -i 's/import io.flutter.app.FlutterActivity;/import io.flutter.embedding.android.FlutterActivity;/' "$file"
+            elif [[ "$file" == *.kt ]]; then
+              sed -i 's/import io.flutter.app.FlutterActivity/import io.flutter.embedding.android.FlutterActivity/' "$file"
+            fi
+          done
+
       - name: Build APK
-        run: flutter build apk --release --no-shrink
+        run: flutter build apk --release --no-shrink --no-sound-null-safety || flutter build apk --release --no-shrink
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
